@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>课堂投票：CFO优先级决策</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    padding: 28px 24px;
+  }
+  .vote-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+  .vote-subtitle {
+    font-size: 14px;
+    color: #8c8c9a;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .vote-card {
+    border: 1.5px solid #e8e8ef;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #fff;
+  }
+  .vote-card:hover {
+    border-color: #b0b0c0;
+    background: #fafbff;
+  }
+  .vote-card.selected {
+    border-color: #1a1a2e;
+    background: #f0f4ff;
+  }
+  .vote-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f0f0f5;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .vote-card.selected .vote-num {
+    background: #1a1a2e;
+    color: #fff;
+  }
+  .vote-text {
+    font-size: 15px;
+    color: #1a1a2e;
+    line-height: 1.6;
+    flex: 1;
+  }
+  .vote-bar-wrap {
+    width: 100%;
+    height: 8px;
+    background: #f0f0f5;
+    border-radius: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+    display: none;
+  }
+  .vote-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+  .vote-count {
+    font-size: 13px;
+    color: #8c8c9a;
+    margin-top: 6px;
+    display: none;
+  }
+  .vote-reason {
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .vote-reason textarea {
+    width: 100%;
+    min-height: 64px;
+    border: 1.5px solid #e8e8ef;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+    outline: none;
+  }
+  .vote-reason textarea:focus {
+    border-color: #1a1a2e;
+  }
+  .vote-reason textarea::placeholder {
+    color: #b0b0c0;
+  }
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px 0;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: #1a1a2e;
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #2a2a4e;
+  }
+  .btn-secondary {
+    background: #fff;
+    color: #1a1a2e;
+    border: 1.5px solid #e8e8ef;
+  }
+  .btn-secondary:hover {
+    background: #f5f5f8;
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .result-panel {
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 12px;
+    background: #f8f9fc;
+    display: none;
+  }
+  .result-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 14px;
+  }
+  .result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .result-label {
+    font-size: 13px;
+    color: #666;
+    width: 70px;
+    flex-shrink: 0;
+  }
+  .result-track {
+    flex: 1;
+    height: 26px;
+    background: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #e8e8ef;
+  }
+  .result-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.8s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    min-width: 4px;
+  }
+  .result-pct {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .result-value {
+    font-size: 13px;
+    color: #8c8c9a;
+    width: 40px;
+    text-align: right;
+  }
+  .insight-box {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 10px;
+    border-left: 4px solid #1a1a2e;
+    background: #fff;
+  }
+  .insight-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+  }
+  .insight-text {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.7;
+  }
+  .reset-row {
+    display: none;
+    margin-top: 14px;
+  }
+  .hint {
+    font-size: 12px;
+    color: #b0b0c0;
+    margin-top: 8px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="vote-title">🗳️ 课堂投票：如果你是CFO，先改哪一点？</div>
+  <div class="vote-subtitle">基于案例诊断，选出你认为最紧迫、最关键的改进项<br>董事长只给你3个月时间和有限改革资源</div>
+
+  <div id="options">
+    <div class="vote-card" data-idx="0" onclick="select(0)">
+      <div class="vote-num">1</div>
+      <div style="flex:1">
+        <div class="vote-text">总经理让财务部独立完成全部预算 —— 缺少全员参与机制</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#3b82f6"></div></div>
+        <div class="vote-count">0 票</div>
+        <div class="vote-reason"><textarea placeholder="为什么你认为这一点最紧迫？（选填）" id="reason-0"></textarea></div>
+      </div>
+    </div>
+    <div class="vote-card" data-idx="1" onclick="select(1)">
+      <div class="vote-num">2</div>
+      <div style="flex:1">
+        <div class="vote-text">销售部门不参加销售预算编制 —— 预算与业务脱节</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#10b981"></div></div>
+        <div class="vote-count">0 票</div>
+        <div class="vote-reason"><textarea placeholder="为什么你认为这一点最紧迫？（选填）" id="reason-1"></textarea></div>
+      </div>
+    </div>
+    <div class="vote-card" data-idx="2" onclick="select(2)">
+      <div class="vote-num">3</div>
+      <div style="flex:1">
+        <div class="vote-text">各部门预算由财务经理直接审批 —— 审批权限错位</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#f59e0b"></div></div>
+        <div class="vote-count">0 票</div>
+        <div class="vote-reason"><textarea placeholder="为什么你认为这一点最紧迫？（选填）" id="reason-2"></textarea></div>
+      </div>
+    </div>
+    <div class="vote-card" data-idx="3" onclick="select(3)">
+      <div class="vote-num">4</div>
+      <div style="flex:1">
+        <div class="vote-text">原材料价格上涨后，采购部自行增加预算 —— 调整程序缺失，控制失效</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#ef4444"></div></div>
+        <div class="vote-count">0 票</div>
+        <div class="vote-reason"><textarea placeholder="为什么你认为这一点最紧迫？（选填）" id="reason-3"></textarea></div>
+      </div>
+    </div>
+    <div class="vote-card" data-idx="4" onclick="select(4)">
+      <div class="vote-num">5</div>
+      <div style="flex:1">
+        <div class="vote-text">年末只检查有没有超预算，不分析原因 —— 闭环断裂</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#8b5cf6"></div></div>
+        <div class="vote-count">0 票</div>
+        <div class="vote-reason"><textarea placeholder="为什么你认为这一点最紧迫？（选填）" id="reason-4"></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="submitBtn" onclick="submitVote()" disabled>提交投票</button>
+    <button class="btn btn-secondary" id="resultBtn" onclick="showResults()">查看实时结果</button>
+  </div>
+  <div class="hint" id="hintText">请先点击选择一个选项，再点击"提交投票"</div>
+
+  <div class="result-panel" id="resultPanel">
+    <div class="result-title">📊 投票结果分布</div>
+    <div id="resultBars"></div>
+    <div class="insight-box" id="insightBox" style="display:none">
+      <div class="insight-title">💡 教师引导提示</div>
+      <div class="insight-text" id="insightText"></div>
+    </div>
+  </div>
+
+  <div class="reset-row" id="resetRow">
+    <button class="btn btn-secondary" onclick="resetVote()">🔄 重置投票（下一班级使用）</button>
+  </div>
+</div>
+
+<script>
+  const labels = ['问题1：财务包办','问题2：销售不参与','问题3：审批错位','问题4：随意调整','问题5：形式考核'];
+  const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'];
+  let selected = -1;
+  let votes = [0,0,0,0,0];
+  let voted = false;
+
+  function select(idx) {
+    if (voted) return;
+    document.querySelectorAll('.vote-card').forEach((c,i) => {
+      c.classList.toggle('selected', i === idx);
+    });
+    document.querySelectorAll('.vote-reason').forEach((r,i) => {
+      r.style.display = i === idx ? 'block' : 'none';
+    });
+    selected = idx;
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('hintText').textContent = '已选择：选项' + (idx+1) + '，点击"提交投票"确认';
+  }
+
+  function submitVote() {
+    if (selected === -1) return;
+    votes[selected]++;
+    voted = true;
+    document.getElementById('submitBtn').textContent = '✓ 已投票';
+    document.getElementById('submitBtn').disabled = true;
+    document.querySelectorAll('.vote-card').forEach(c => c.style.cursor = 'default');
+    document.getElementById('hintText').textContent = '投票成功！可点击"查看实时结果"查看全班分布';
+    showResults();
+  }
+
+  function showResults() {
+    const total = votes.reduce((a,b)=>a+b,0);
+    const panel = document.getElementById('resultPanel');
+    const bars = document.getElementById('resultBars');
+    panel.style.display = 'block';
+    bars.innerHTML = '';
+
+    votes.forEach((v,i) => {
+      const pct = total > 0 ? Math.round(v/total*100) : 0;
+      const bar = document.createElement('div');
+      bar.className = 'result-item';
+      bar.innerHTML = `
+        <div class="result-label">选项${i+1}</div>
+        <div class="result-track">
+          <div class="result-fill" style="width:${pct}%;background:${colors[i]}">
+            ${pct > 12 ? '<span class="result-pct">'+pct+'%</span>' : ''}
+          </div>
+        </div>
+        <div class="result-value">${v}票</div>
+      `;
+      bars.appendChild(bar);
+    });
+
+    const insightBox = document.getElementById('insightBox');
+    const insightText = document.getElementById('insightText');
+    if (total > 0) {
+      const maxIdx = votes.indexOf(Math.max(...votes));
+      const insights = [
+        '多数同学认为"财务包办"最紧迫。这体现了对"全面预算=全员参与"核心理念的认知。但也要注意：总经理观念不改变，即便建立预算委员会也可能形同虚设。',
+        '多数同学认为"销售不参与"最紧迫。这说明大家理解了"预算脱离业务=数字游戏"的道理。但销售不参与往往是"没人组织"的结果，根子在工作机构。',
+        '多数同学认为"审批错位"最紧迫。这触及了公司治理的核心——分权制衡。财务经理既编又审，预算就失去了独立性和权威性。',
+        '多数同学认为"随意调整"最紧迫。这体现了对预算"刚性约束"的重视。但也要注意：过于僵化不调整也不行，关键是"按程序调整"。',
+        '多数同学认为"形式考核"最紧迫。这说明大家理解了"闭环管理"的重要性。没有分析反馈，预算管理就停留在"编数字"层面。'
+      ];
+      insightText.textContent = insights[maxIdx];
+      insightBox.style.display = 'block';
+    }
+    document.getElementById('resetRow').style.display = 'flex';
+  }
+
+  function resetVote() {
+    if (!confirm('确定重置投票？当前投票数据将清零。')) return;
+    selected = -1;
+    votes = [0,0,0,0,0];
+    voted = false;
+    document.querySelectorAll('.vote-card').forEach(c => {
+      c.classList.remove('selected');
+      c.style.cursor = 'pointer';
+    });
+    document.querySelectorAll('.vote-reason').forEach(r => r.style.display = 'none');
+    document.querySelectorAll('.vote-reason textarea').forEach(t => t.value = '');
+    document.getElementById('submitBtn').textContent = '提交投票';
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('resultPanel').style.display = 'none';
+    document.getElementById('resetRow').style.display = 'none';
+    document.getElementById('hintText').textContent = '请先点击选择一个选项，再点击"提交投票"';
+  }
+</script>
+</body>
+</html>
