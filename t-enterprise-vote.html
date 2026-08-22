@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>课堂投票：T企业最可能缺什么？</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    padding: 28px 24px;
+  }
+  .vote-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+  .vote-subtitle {
+    font-size: 14px;
+    color: #8c8c9a;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    padding: 14px;
+    background: #f8f9fc;
+    border-radius: 10px;
+    border-left: 3px solid #3b82f6;
+  }
+  .vote-card {
+    border: 1.5px solid #e8e8ef;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+  }
+  .vote-card:hover {
+    border-color: #b0b0c0;
+    background: #fafbff;
+  }
+  .vote-card.selected {
+    border-color: #1a1a2e;
+    background: #f0f4ff;
+  }
+  .vote-letter {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f0f0f5;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .vote-card.selected .vote-letter {
+    background: #1a1a2e;
+    color: #fff;
+  }
+  .vote-text {
+    font-size: 15px;
+    color: #1a1a2e;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .vote-bar-wrap {
+    width: 100%;
+    height: 8px;
+    background: #f0f0f5;
+    border-radius: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+    display: none;
+  }
+  .vote-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+  .vote-count {
+    font-size: 13px;
+    color: #8c8c9a;
+    margin-top: 6px;
+    display: none;
+  }
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px 0;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: #1a1a2e;
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #2a2a4e;
+  }
+  .btn-secondary {
+    background: #fff;
+    color: #1a1a2e;
+    border: 1.5px solid #e8e8ef;
+  }
+  .btn-secondary:hover {
+    background: #f5f5f8;
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .result-panel {
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 12px;
+    background: #f8f9fc;
+    display: none;
+  }
+  .result-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 14px;
+  }
+  .result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .result-label {
+    font-size: 13px;
+    color: #666;
+    width: 50px;
+    flex-shrink: 0;
+  }
+  .result-track {
+    flex: 1;
+    height: 26px;
+    background: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #e8e8ef;
+  }
+  .result-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.8s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    min-width: 4px;
+  }
+  .result-pct {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .result-value {
+    font-size: 13px;
+    color: #8c8c9a;
+    width: 40px;
+    text-align: right;
+  }
+  .insight-box {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 10px;
+    border-left: 4px solid #1a1a2e;
+    background: #fff;
+  }
+  .insight-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+  }
+  .insight-text {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.7;
+  }
+  .reset-row {
+    display: none;
+    margin-top: 14px;
+  }
+  .hint {
+    font-size: 12px;
+    color: #b0b0c0;
+    margin-top: 8px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="vote-title">🗳️ 课堂投票：T企业最可能缺什么？</div>
+  <div class="vote-subtitle">
+    <strong>情境：</strong>假如你是一家企业的总经理，这家企业有几个特点：<br>
+    ① 技术水平领先 &nbsp;② 产品市场广阔 &nbsp;③ 已经成功上市<br>
+    ④ 有较强研发能力 &nbsp;⑤ 行业发展前景很好<br><br>
+    <strong>问题：</strong>这样的企业最可能缺什么？
+  </div>
+
+  <div id="options">
+    <div class="vote-card" data-idx="0" onclick="select(0)">
+      <div class="vote-letter">A</div>
+      <div style="flex:1">
+        <div class="vote-text">技术</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#3b82f6"></div></div>
+        <div class="vote-count">0 票</div>
+      </div>
+    </div>
+    <div class="vote-card" data-idx="1" onclick="select(1)">
+      <div class="vote-letter">B</div>
+      <div style="flex:1">
+        <div class="vote-text">市场</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#10b981"></div></div>
+        <div class="vote-count">0 票</div>
+      </div>
+    </div>
+    <div class="vote-card" data-idx="2" onclick="select(2)">
+      <div class="vote-letter">C</div>
+      <div style="flex:1">
+        <div class="vote-text">资金</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#f59e0b"></div></div>
+        <div class="vote-count">0 票</div>
+      </div>
+    </div>
+    <div class="vote-card" data-idx="3" onclick="select(3)">
+      <div class="vote-letter">D</div>
+      <div style="flex:1">
+        <div class="vote-text">管理</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:0%;background:#ef4444"></div></div>
+        <div class="vote-count">0 票</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="submitBtn" onclick="submitVote()" disabled>提交投票</button>
+    <button class="btn btn-secondary" id="resultBtn" onclick="showResults()">查看实时结果</button>
+  </div>
+  <div class="hint" id="hintText">请先点击选择一个选项，再点击"提交投票"</div>
+
+  <div class="result-panel" id="resultPanel">
+    <div class="result-title">📊 投票结果分布</div>
+    <div id="resultBars"></div>
+    <div class="insight-box" id="insightBox" style="display:none">
+      <div class="insight-title">💡 教师引导提示</div>
+      <div class="insight-text" id="insightText"></div>
+    </div>
+  </div>
+
+  <div class="reset-row" id="resetRow">
+    <button class="btn btn-secondary" onclick="resetVote()">🔄 重置投票（下一班级使用）</button>
+  </div>
+</div>
+
+<script>
+  const labels = ['A. 技术','B. 市场','C. 资金','D. 管理'];
+  const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444'];
+  const insights = [
+    '多数同学选择了"技术"。这家企业确实技术领先，但技术是会迭代的。如果管理跟不上，技术优势可能无法转化为市场优势和利润优势。T企业的案例恰恰说明：技术好，不代表企业一定好。',
+    '多数同学选择了"市场"。这家企业已经上市，产品市场广阔，说明市场不是最短的短板。真正的问题往往是：市场机会来了，企业内部的资源配置、成本控制和战略协同能不能跟上？',
+    '多数同学选择了"资金"。上市企业通常具备一定融资能力，资金问题可能存在，但未必是最核心的问题。T企业已经上市，资金不是最紧的约束。真正限制企业继续成长的，往往是管理能力。',
+    '多数同学选择了"管理"。很好。企业发展到一定阶段，真正限制继续成长的，往往不是单一的技术、市场或资金问题，而是管理问题。T企业正是如此：技术领先、市场广阔、资金充裕，但管理会计基础薄弱，预算系统流于形式，成本费用失控。这就是我们今天要学习的全面预算管理的现实意义。'
+  ];
+  let selected = -1;
+  let votes = [0,0,0,0];
+  let voted = false;
+
+  function select(idx) {
+    if (voted) return;
+    document.querySelectorAll('.vote-card').forEach((c,i) => {
+      c.classList.toggle('selected', i === idx);
+    });
+    selected = idx;
+    document.getElementById('submitBtn').disabled = false;
+    const letters = ['A','B','C','D'];
+    document.getElementById('hintText').textContent = '已选择：' + letters[idx] + '，点击"提交投票"确认';
+  }
+
+  function submitVote() {
+    if (selected === -1) return;
+    votes[selected]++;
+    voted = true;
+    document.getElementById('submitBtn').textContent = '✓ 已投票';
+    document.getElementById('submitBtn').disabled = true;
+    document.querySelectorAll('.vote-card').forEach(c => c.style.cursor = 'default');
+    document.getElementById('hintText').textContent = '投票成功！可点击"查看实时结果"查看全班分布';
+    showResults();
+  }
+
+  function showResults() {
+    const total = votes.reduce((a,b)=>a+b,0);
+    const panel = document.getElementById('resultPanel');
+    const bars = document.getElementById('resultBars');
+    panel.style.display = 'block';
+    bars.innerHTML = '';
+
+    votes.forEach((v,i) => {
+      const pct = total > 0 ? Math.round(v/total*100) : 0;
+      const bar = document.createElement('div');
+      bar.className = 'result-item';
+      bar.innerHTML = `
+        <div class="result-label">${labels[i].split('.')[0]}</div>
+        <div class="result-track">
+          <div class="result-fill" style="width:${pct}%;background:${colors[i]}">
+            ${pct > 12 ? '<span class="result-pct">'+pct+'%</span>' : ''}
+          </div>
+        </div>
+        <div class="result-value">${v}票</div>
+      `;
+      bars.appendChild(bar);
+    });
+
+    const insightBox = document.getElementById('insightBox');
+    const insightText = document.getElementById('insightText');
+    if (total > 0) {
+      const maxIdx = votes.indexOf(Math.max(...votes));
+      insightText.textContent = insights[maxIdx];
+      insightBox.style.display = 'block';
+    }
+    document.getElementById('resetRow').style.display = 'flex';
+  }
+
+  function resetVote() {
+    if (!confirm('确定重置投票？当前投票数据将清零。')) return;
+    selected = -1;
+    votes = [0,0,0,0];
+    voted = false;
+    document.querySelectorAll('.vote-card').forEach(c => {
+      c.classList.remove('selected');
+      c.style.cursor = 'pointer';
+    });
+    document.getElementById('submitBtn').textContent = '提交投票';
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('resultPanel').style.display = 'none';
+    document.getElementById('resetRow').style.display = 'none';
+    document.getElementById('hintText').textContent = '请先点击选择一个选项，再点击"提交投票"';
+  }
+</script>
+</body>
+</html>
