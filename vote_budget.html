@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>课堂投票 - 预算到底是什么？</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #dbeafe 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .vote-card {
+      max-width: 600px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 40px 32px;
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .tag {
+      display: inline-block;
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      color: white;
+      padding: 6px 20px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    }
+    .header h1 {
+      color: #1e40af;
+      font-size: 26px;
+      font-weight: 800;
+      text-shadow: 0 2px 4px rgba(37, 99, 235, 0.08);
+      line-height: 1.3;
+    }
+    .divider {
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      margin: 14px auto 0;
+      border-radius: 2px;
+    }
+    .question-box {
+      background: linear-gradient(135deg, rgba(239, 246, 255, 0.9), rgba(219, 234, 254, 0.7));
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 28px;
+      border: 1px solid rgba(59, 130, 246, 0.12);
+      position: relative;
+      overflow: hidden;
+    }
+    .question-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px; height: 100%;
+      background: linear-gradient(180deg, #3b82f6, #60a5fa);
+    }
+    .question-text {
+      color: #1e3a5f;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.6;
+      padding-left: 8px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      padding: 18px 22px;
+      background: white;
+      border: 2.5px solid #dbeafe;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+    .option:hover:not(.disabled) {
+      border-color: #93c5fd;
+      transform: translateX(6px);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
+    }
+    .option.selected {
+      border-color: #2563eb;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.15);
+    }
+    .option.disabled {
+      cursor: default;
+    }
+    .option-letter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border-radius: 50%;
+      font-weight: 800;
+      font-size: 17px;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(59, 130, 246, 0.35);
+      transition: all 0.3s ease;
+      z-index: 2;
+    }
+    .option.selected .option-letter {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      transform: scale(1.1);
+    }
+    .option-text {
+      color: #1e3a5f;
+      font-size: 15.5px;
+      font-weight: 600;
+      z-index: 2;
+      flex: 1;
+    }
+    .progress-bg {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0.04));
+      width: 0%;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 0;
+      border-radius: 0 14px 14px 0;
+    }
+    .percent-label {
+      margin-left: auto;
+      color: #2563eb;
+      font-weight: 800;
+      font-size: 15px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 2;
+      min-width: 45px;
+      text-align: right;
+    }
+    .percent-label.show {
+      opacity: 1;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+      letter-spacing: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .submit-btn::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    .submit-btn:hover::after {
+      left: 100%;
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(37, 99, 235, 0.4);
+    }
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+    .submit-btn.submitted {
+      background: #9ca3af;
+      box-shadow: none;
+      cursor: default;
+      transform: none;
+    }
+    .submit-btn.error {
+      background: linear-gradient(90deg, #dc2626, #ef4444);
+      animation: shake 0.4s ease;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .result-msg {
+      display: none;
+      text-align: center;
+      margin-top: 18px;
+      padding: 14px;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+      border-radius: 12px;
+      color: #15803d;
+      font-weight: 700;
+      font-size: 15px;
+      border: 1px solid rgba(34, 197, 94, 0.15);
+      animation: fadeInUp 0.5s ease;
+    }
+    .analysis-box {
+      display: none;
+      margin-top: 22px;
+      padding: 24px;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border-radius: 14px;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      animation: fadeInUp 0.6s ease 0.2s both;
+    }
+    .analysis-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      color: #92400e;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .analysis-text {
+      color: #78350f;
+      font-size: 14.5px;
+      line-height: 1.8;
+    }
+    .analysis-text strong {
+      color: #b45309;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .vote-count {
+      text-align: center;
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 13px;
+      display: none;
+    }
+    .vote-count.show {
+      display: block;
+      animation: fadeInUp 0.5s ease;
+    }
+    @media (max-width: 480px) {
+      .vote-card { padding: 28px 20px; }
+      .header h1 { font-size: 22px; }
+      .option { padding: 14px 16px; }
+      .option-letter { width: 34px; height: 34px; font-size: 15px; }
+      .option-text { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="vote-card">
+    <div class="header">
+      <div class="tag">📊 课堂互动</div>
+      <h1>课堂导入：预算到底是什么？</h1>
+      <div class="divider"></div>
+    </div>
+
+    <div class="question-box">
+      <p class="question-text">❓ 如果你是企业管理者，你认为预算首先是什么？</p>
+    </div>
+
+    <div class="options" id="options">
+      <div class="option" data-value="A">
+        <span class="option-letter">A</span>
+        <span class="option-text">财务部门编制的数字表</span>
+        <div class="progress-bg"></div>
+        <span class="percent-label">0%</span>
+      </div>
+      <div class="option" data-value="B">
+        <span class="option-letter">B</span>
+        <span class="option-text">控制费用的工具</span>
+        <div class="progress-bg"></div>
+        <span class="percent-label">0%</span>
+      </div>
+      <div class="option" data-value="C">
+        <span class="option-letter">C</span>
+        <span class="option-text">战略目标和资源配置的系统</span>
+        <div class="progress-bg"></div>
+        <span class="percent-label">0%</span>
+      </div>
+      <div class="option" data-value="D">
+        <span class="option-letter">D</span>
+        <span class="option-text">考核员工的依据</span>
+        <div class="progress-bg"></div>
+        <span class="percent-label">0%</span>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn">提交投票</button>
+
+    <div class="result-msg" id="resultMsg">
+      ✅ 投票成功！感谢您的参与
+    </div>
+
+    <div class="vote-count" id="voteCount">
+      已有 <strong id="totalNum">100</strong> 人参与投票
+    </div>
+
+    <div class="analysis-box" id="analysis">
+      <div class="analysis-title">
+        <span style="font-size: 20px;">💡</span>
+        <span>答案解析</span>
+      </div>
+      <p class="analysis-text">
+        正确答案是 <strong>C</strong>。预算不仅仅是财务部门的数字表格（A），也不仅仅是控制费用的工具（B）或考核员工的依据（D）。从企业管理者的视角来看，<strong>预算首先是一个将战略目标转化为具体资源配置的系统</strong>，它是连接战略与执行的桥梁。
+      </p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const options = document.querySelectorAll('.option');
+      const submitBtn = document.getElementById('submitBtn');
+      const resultMsg = document.getElementById('resultMsg');
+      const analysis = document.getElementById('analysis');
+      const voteCount = document.getElementById('voteCount');
+      const totalNum = document.getElementById('totalNum');
+      let selected = null;
+      let voted = false;
+
+      // 模拟后台投票数据（可替换为真实接口）
+      const mockVotes = { A: 12, B: 28, C: 45, D: 15 };
+      const totalVotes = Object.values(mockVotes).reduce((a, b) => a + b, 0);
+
+      options.forEach(opt => {
+        opt.addEventListener('click', function() {
+          if (voted) return;
+          options.forEach(o => o.classList.remove('selected'));
+          this.classList.add('selected');
+          selected = this.dataset.value;
+        });
+      });
+
+      submitBtn.addEventListener('click', function() {
+        if (!selected) {
+          submitBtn.classList.add('error');
+          const originalText = submitBtn.textContent;
+          submitBtn.textContent = '请先选择一个选项';
+          setTimeout(() => {
+            submitBtn.classList.remove('error');
+            submitBtn.textContent = originalText;
+          }, 1500);
+          return;
+        }
+        if (voted) return;
+
+        voted = true;
+        submitBtn.classList.add('submitted');
+        submitBtn.textContent = '已提交 ✓';
+
+        resultMsg.style.display = 'block';
+        analysis.style.display = 'block';
+        voteCount.classList.add('show');
+        totalNum.textContent = totalVotes + 1;
+
+        options.forEach(opt => {
+          opt.classList.add('disabled');
+          const val = opt.dataset.value;
+          const percent = Math.round((mockVotes[val] / totalVotes) * 100);
+          const bar = opt.querySelector('.progress-bg');
+          const label = opt.querySelector('.percent-label');
+
+          // 延迟动画，让效果更自然
+          setTimeout(() => {
+            bar.style.width = percent + '%';
+            label.textContent = percent + '%';
+            label.classList.add('show');
+          }, 200);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
